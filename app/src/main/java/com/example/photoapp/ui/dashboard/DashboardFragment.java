@@ -14,7 +14,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 
 import androidx.annotation.NonNull;
@@ -30,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -43,7 +46,10 @@ public class DashboardFragment extends Fragment {
     private Button photoButton;
     private Button rightButton;
     private Button leftButton;
+    private Button captionSaveButton;
+    private TextView timeTextView;
     private ImageView imageView;
+    private EditText captionEditText;
     private DashboardViewModel dashboardViewModel;
     private File picture;
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -51,6 +57,8 @@ public class DashboardFragment extends Fragment {
     static final int REQUEST_TAKE_PHOTO = 1;
     int correntIndex = 0;
     public ArrayList<String> pictureList = new ArrayList<String>();
+    public SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+    public SimpleDateFormat printFormat = new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -63,8 +71,10 @@ public class DashboardFragment extends Fragment {
         photoButton = root.findViewById(R.id.photoButton);
         rightButton = root.findViewById(R.id.rightButton);
         leftButton = root.findViewById(R.id.leftButton);
-
+        timeTextView = root.findViewById(R.id.timeTextView);
         imageView = root.findViewById(R.id.imageView);
+        captionEditText = root.findViewById(R.id.captionEditText);
+        captionSaveButton = root.findViewById(R.id.captionSaveButton);
 
         ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -80,8 +90,10 @@ public class DashboardFragment extends Fragment {
         rightButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                if (correntIndex+1>pictureList.size()){
-                    correntIndex = pictureList.size();
+                if (correntIndex+1>=pictureList.size()-1){
+                    correntIndex = pictureList.size()-1;
+                }else {
+                    correntIndex+=1;
                 }
                 setPic(pictureList.get(correntIndex));
             }
@@ -92,8 +104,18 @@ public class DashboardFragment extends Fragment {
             public void onClick(View v) {
                 if (correntIndex-1<0){
                     correntIndex = 0;
+                }else{
+                    correntIndex-=1;
                 }
                 setPic(pictureList.get(correntIndex));
+            }
+        });
+        captionSaveButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                String caption = captionEditText.getText().toString();
+
+                changeName(caption);
             }
         });
 
@@ -127,6 +149,29 @@ public class DashboardFragment extends Fragment {
         return root;
     }
 
+    public void changeName(String capition){
+        if (capition.isEmpty()){
+            capition = "capition";
+        }
+        String filename = pictureList.get(correntIndex);
+        String [] temp = null;
+        temp = filename.split("_");
+        temp[2] = capition;
+        String newfilename = temp[0];
+        for (int i=1;i<temp.length;i++) {
+            newfilename = newfilename + "_" + temp[i];
+        }
+
+        File newFile = new File(newfilename);
+        if (!newFile.exists()){
+            File file = new File(filename);
+            file.renameTo(newFile);
+            pictureList.set(correntIndex,newfilename);
+        }
+        Log.println(Log.INFO,"info",filename);
+        Log.println(Log.INFO,"info",newfilename);
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
@@ -134,26 +179,13 @@ public class DashboardFragment extends Fragment {
         }
     }
 
-    public void leftButtonAction(View v){
-        if (correntIndex-1<0){
-            correntIndex = 0;
-        }
-        setPic(pictureList.get(correntIndex));
-
-    }
-
-    public void rightButtonAction(View v){
-        if (correntIndex+1>pictureList.size()){
-            correntIndex = pictureList.size();
-        }
-        setPic(pictureList.get(correntIndex));
-    }
-
     private File createImageFile() throws IOException {
         // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + "_";
+        String time = format.format(new Date());
+        String imageFileName = "JPEG_" + time + "_caption_";
+        Log.println(Log.INFO,"info",imageFileName);
         File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        Log.println(Log.INFO,"info",storageDir.getAbsolutePath());
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
                 ".jpg",         /* suffix */
@@ -181,24 +213,49 @@ public class DashboardFragment extends Fragment {
         // Get the dimensions of the bitmap
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inJustDecodeBounds = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath, bmOptions);
+        BitmapFactory.decodeFile(currentPhotoPath, bmOptions);
 
         int photoW = bmOptions.outWidth;
         int photoH = bmOptions.outHeight;
 
         // Determine how much to scale down the image
         int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-        Log.println(Log.INFO,"info",scaleFactor+"");
+        Log.println(Log.INFO,"info",currentPhotoPath);
 
         // Decode the image file into a Bitmap sized to fill the View
         bmOptions.inJustDecodeBounds = false;
         bmOptions.inSampleSize = scaleFactor;
         bmOptions.inPurgeable = true;
 
-        bitmap = BitmapFactory.decodeFile(currentPhotoPath, bmOptions);
+        Bitmap bitmap  = BitmapFactory.decodeFile(currentPhotoPath, bmOptions);
         imageView.setImageBitmap(bitmap);
+
+        timeTextView.setText(getImageTimeByFileName(currentPhotoPath));
+        captionEditText.setText(getCaptionByFileName(currentPhotoPath));
     }
 
+
+
+
+    public String getImageTimeByFileName(String filename){
+        String [] temp = null;
+        temp = filename.split("_");
+        try {
+            Date date = format.parse(temp[1]);
+            String dateTime = printFormat.format(date);
+            return dateTime;
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+
+    public String getCaptionByFileName(String filename){
+        String [] temp = null;
+        temp = filename.split("_");
+        return temp[2];
+    }
     public void getPictureList() {
         ArrayList<String> list = new ArrayList<String>();
         File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
