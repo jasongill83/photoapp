@@ -1,5 +1,6 @@
 package com.example.photoapp.ui.dashboard;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,6 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import androidx.annotation.NonNull;
@@ -25,8 +27,10 @@ import androidx.fragment.app.Fragment;
 
 import androidx.lifecycle.ViewModelProviders;
 
+import com.example.photoapp.MainActivity;
 import com.example.photoapp.PhotoActivity;
 import com.example.photoapp.R;
+import com.example.photoapp.SearchDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,11 +51,13 @@ public class DashboardFragment extends Fragment {
     private Button rightButton;
     private Button leftButton;
     private Button captionSaveButton;
+    private Button searchButton;
     private TextView timeTextView;
     private ImageView imageView;
     private EditText captionEditText;
     private DashboardViewModel dashboardViewModel;
     private File picture;
+    private MainActivity testActivity;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     String currentPhotoPath;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -68,6 +74,11 @@ public class DashboardFragment extends Fragment {
                 ViewModelProviders.of(this).get(DashboardViewModel.class);
         View root = inflater.inflate(R.layout.fragment_dashboard, container, false);
 
+        testActivity = (MainActivity) getActivity();
+        String searchCaption = testActivity.returnCaption();
+        String searchTimeStamp = testActivity.returnTimeStamp();
+
+        searchButton = root.findViewById(R.id.searchBtn);
         photoButton = root.findViewById(R.id.photoButton);
         rightButton = root.findViewById(R.id.rightButton);
         leftButton = root.findViewById(R.id.leftButton);
@@ -118,6 +129,15 @@ public class DashboardFragment extends Fragment {
                 changeName(caption);
             }
         });
+        searchButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                openDialog();
+            }
+        });
+
+
+
 
         photoButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -147,6 +167,12 @@ public class DashboardFragment extends Fragment {
 
 
         return root;
+    }
+
+    public void openDialog() {
+        SearchDialog searchDialog = new SearchDialog();
+
+        searchDialog.show(getFragmentManager(), "Search Dialog");
     }
 
     public void changeName(String capition){
@@ -233,8 +259,6 @@ public class DashboardFragment extends Fragment {
         timeTextView.setText(getImageTimeByFileName(currentPhotoPath));
         captionEditText.setText(getCaptionByFileName(currentPhotoPath));
     }
-
-
 
 
     public String getImageTimeByFileName(String filename){

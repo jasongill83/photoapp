@@ -1,7 +1,9 @@
 package com.example.photoapp;
 
 
+import android.content.Context;
 import android.os.Bundle;
+import android.widget.Toast;
 
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -12,8 +14,10 @@ import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SearchDialog.SearchDialogListener {
 
+    private String testCaption;
+    private String testTimeStamp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +34,20 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navView, navController);
 
 
+    }
+
+    @Override
+    public void applySearch(String caption, String timeStamp) {
+        testCaption = caption;
+        testTimeStamp= timeStamp;
+    }
+
+    public String returnCaption() {
+        return testCaption;
+    }
+
+    public String returnTimeStamp() {
+        return testTimeStamp;
     }
 
 }

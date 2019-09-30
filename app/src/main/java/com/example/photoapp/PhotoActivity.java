@@ -24,7 +24,7 @@ import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class PhotoActivity extends Activity implements View.OnClickListener{
+public class PhotoActivity extends Activity implements View.OnClickListener {
 
     public static final int PHOTO_REQUEST_CAREMA = 1;// 拍照
     public static final int CROP_PHOTO = 2;
@@ -54,6 +54,7 @@ public class PhotoActivity extends Activity implements View.OnClickListener{
                 break;
         }
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
